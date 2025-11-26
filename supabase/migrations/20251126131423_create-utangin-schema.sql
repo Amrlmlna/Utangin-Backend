@@ -123,28 +123,3 @@ CREATE INDEX idx_notifications_user_read ON notifications(user_id, read_status);
 CREATE INDEX idx_notifications_scheduled_time ON notifications(scheduled_time) WHERE scheduled_time IS NOT NULL;
 CREATE INDEX idx_audit_logs_user_action ON audit_logs(user_id, action);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
-
--- Add down migration sql here
-DROP INDEX IF EXISTS idx_audit_logs_created_at;
-DROP INDEX IF EXISTS idx_audit_logs_user_action;
-DROP INDEX IF EXISTS idx_notifications_scheduled_time;
-DROP INDEX IF EXISTS idx_notifications_user_read;
-DROP INDEX IF EXISTS idx_agreements_lender_borrower;
-DROP INDEX IF EXISTS idx_agreements_status;
-DROP INDEX IF EXISTS idx_agreements_due_date;
-DROP INDEX IF EXISTS idx_users_ktp_number;
-DROP INDEX IF EXISTS idx_users_phone;
-DROP INDEX IF EXISTS idx_users_email;
-
-DROP TABLE IF EXISTS audit_logs;
-DROP TABLE IF EXISTS identity_verifications;
-DROP TABLE IF EXISTS ratings;
-DROP TABLE IF EXISTS notifications;
-DROP TABLE IF EXISTS obligations;
-DROP TABLE IF EXISTS agreements;
-DROP TABLE IF EXISTS users;
-
-DROP TYPE IF EXISTS verification_status;
-DROP TYPE IF EXISTS delivery_method;
-DROP TYPE IF EXISTS notification_type;
-DROP TYPE IF EXISTS agreement_status;

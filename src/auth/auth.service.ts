@@ -33,25 +33,61 @@ export class AuthService {
       throw new UnauthorizedException(error.message);
     }
 
-    // Create user profile in our users table
-    const { data: userProfile, error: profileError } = await this.supabase
-      .from('users')
-      .insert([{
-        id: data.user!.id,
+    // Check if session is available (it might not be if email confirmation is required)
+    if (!data.session || !data.session.access_token) {
+      // If no session available, try to sign in to get the token
+      const signInResult = await this.supabase.auth.signInWithPassword({
         email,
-        name,
-      }])
-      .select()
-      .single();
+        password,
+      });
 
-    if (profileError) {
-      throw new UnauthorizedException(profileError.message);
+      if (signInResult.error) {
+        throw new UnauthorizedException(signInResult.error.message);
+      }
+
+      const token = signInResult.data.session!.access_token;
+
+      // Create user profile in our users table
+      const { data: userProfile, error: profileError } = await this.supabase
+        .from('users')
+        .insert([{
+          id: data.user!.id,
+          email,
+          name,
+        }])
+        .select()
+        .single();
+
+      if (profileError) {
+        throw new UnauthorizedException(profileError.message);
+      }
+
+      return {
+        user: userProfile,
+        token: token,
+      };
+    } else {
+      // Session is available from signUp
+      // Create user profile in our users table
+      const { data: userProfile, error: profileError } = await this.supabase
+        .from('users')
+        .insert([{
+          id: data.user!.id,
+          email,
+          name,
+        }])
+        .select()
+        .single();
+
+      if (profileError) {
+        throw new UnauthorizedException(profileError.message);
+      }
+
+      return {
+        user: userProfile,
+        token: data.session.access_token,
+      };
     }
-
-    return {
-      user: userProfile,
-      token: data.session!.access_token,
-    };
   }
 
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
@@ -62,6 +98,11 @@ export class AuthService {
 
     if (error) {
       throw new UnauthorizedException(error.message);
+    }
+
+    // Ensure session exists and has access token
+    if (!data.session || !data.session.access_token) {
+      throw new UnauthorizedException('Failed to obtain access token');
     }
 
     // Fetch user profile from our users table
@@ -77,7 +118,7 @@ export class AuthService {
 
     return {
       user: userProfile,
-      token: data.session!.access_token,
+      token: data.session.access_token,
     };
   }
 
@@ -103,6 +144,8 @@ export class AuthService {
   }
 
   async logout(token: string): Promise<void> {
+    // Supabase signOut() signs out the current session
+    // We don't need to pass the token since Supabase manages the session internally
     const { error } = await this.supabase.auth.signOut();
 
     if (error) {
