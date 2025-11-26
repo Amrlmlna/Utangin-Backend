@@ -1,7 +1,7 @@
-import { 
-  Controller, 
-  Post, 
-  Body, 
+import {
+  Controller,
+  Post,
+  Body,
   UseGuards,
   Req,
   Get
@@ -26,7 +26,15 @@ export class AuthController {
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     const { email, password, name } = registerDto;
-    return this.authService.register(email, password, name);
+    const result = await this.authService.register(email, password, name);
+
+    // If email confirmation is required, return a message instead of user data
+    if (result.requiresConfirmation) {
+      return { message: result.message };
+    }
+
+    // Otherwise return user and token as before
+    return result;
   }
 
   @Post('login')
@@ -35,13 +43,20 @@ export class AuthController {
     return this.authService.login(email, password);
   }
 
+  @Post('confirm-email')
+  async confirmEmail(@Body() body: { email: string, password: string }) {
+    // This endpoint is for users who have confirmed their email and want to get their token
+    // It will try to login the user after confirmation
+    return this.authService.login(body.email, body.password);
+  }
+
   @Post('logout')
   @UseGuards(AuthGuard('jwt'))
   async logout(@Req() req) {
     // Get token from header
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-    
+
     await this.authService.logout(token);
     return { message: 'Logged out successfully' };
   }

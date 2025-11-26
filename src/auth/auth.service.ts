@@ -18,14 +18,15 @@ export class AuthService {
     this.supabase = createClient(supabaseUrl, supabaseKey);
   }
 
-  async register(email: string, password: string, name: string): Promise<{ user: User; token: string }> {
+  async register(email: string, password: string, name: string): Promise<{ user?: User; token?: string; message?: string; requiresConfirmation: boolean }> {
     const { data, error } = await this.supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           name,
-        }
+        },
+        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/confirm`, // Optional: redirect after confirmation
       }
     });
 
@@ -35,39 +36,32 @@ export class AuthService {
 
     // Check if session is available (it might not be if email confirmation is required)
     if (!data.session || !data.session.access_token) {
-      // If no session available, try to sign in to get the token
-      const signInResult = await this.supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // This means email confirmation is required
+      // The user has been created but needs to confirm their email
 
-      if (signInResult.error) {
-        throw new UnauthorizedException(signInResult.error.message);
-      }
-
-      const token = signInResult.data.session!.access_token;
-
-      // Create user profile in our users table
-      const { data: userProfile, error: profileError } = await this.supabase
-        .from('users')
-        .insert([{
-          id: data.user!.id,
-          email,
-          name,
-        }])
-        .select()
-        .single();
-
-      if (profileError) {
-        throw new UnauthorizedException(profileError.message);
+      // Create user profile in our users table only if the user was actually created
+      if (data.user) {
+        try {
+          await this.supabase
+            .from('users')
+            .insert([{
+              id: data.user.id,
+              email,
+              name,
+            }]);
+          // We don't need to return the user data in this case since email confirmation is required
+        } catch (profileError) {
+          // If user already exists in our table (due to duplicate request), just continue
+          // This might happen if the user tries to register again after receiving the email
+        }
       }
 
       return {
-        user: userProfile,
-        token: token,
+        message: 'Please check your email to confirm your account',
+        requiresConfirmation: true
       };
     } else {
-      // Session is available from signUp
+      // Session is available from signUp (email confirmation not required or auto-confirmed)
       // Create user profile in our users table
       const { data: userProfile, error: profileError } = await this.supabase
         .from('users')
@@ -86,6 +80,7 @@ export class AuthService {
       return {
         user: userProfile,
         token: data.session.access_token,
+        requiresConfirmation: false
       };
     }
   }
@@ -97,6 +92,10 @@ export class AuthService {
     });
 
     if (error) {
+      // Check if it's an email not confirmed error
+      if (error.message.includes('email') && error.message.includes('confirm')) {
+        throw new UnauthorizedException('Please confirm your email address before logging in');
+      }
       throw new UnauthorizedException(error.message);
     }
 
