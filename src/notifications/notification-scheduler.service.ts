@@ -3,6 +3,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AgreementsService } from '../agreements/agreements.service';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
+import { NotificationType } from '../notifications/dto/create-notification.dto';
+import { DeliveryMethod } from '../agreements/dto/create-agreement.dto';
 
 @Injectable()
 export class NotificationSchedulerService {
@@ -56,10 +58,10 @@ export class NotificationSchedulerService {
           await this.notificationsService.create({
             user_id: agreement.borrower_id, // Notify the borrower
             agreement_id: agreement.id,
-            type: 'reminder',
+            type: NotificationType.REMINDER,
             title: 'Pengingat Pembayaran Utang',
             message: `Pembayaran utang Anda dengan nominal Rp ${agreement.amount?.toLocaleString()} akan jatuh tempo besok.`,
-            delivery_method: 'push',
+            delivery_method: DeliveryMethod.PUSH,
             escalation_level: 0,
           });
         }
@@ -94,7 +96,7 @@ export class NotificationSchedulerService {
           .from('notifications')
           .select('*')
           .eq('agreement_id', agreement.id)
-          .eq('type', 'reminder')
+          .eq('type', NotificationType.REMINDER)
           .gte('created_at', today.toISOString()) // Created today
           .single();
 
@@ -103,10 +105,10 @@ export class NotificationSchedulerService {
           await this.notificationsService.create({
             user_id: agreement.borrower_id, // Notify the borrower
             agreement_id: agreement.id,
-            type: 'reminder',
+            type: NotificationType.REMINDER,
             title: 'Pembayaran Terlambat',
             message: `Pembayaran utang Anda dengan nominal Rp ${agreement.amount?.toLocaleString()} telah melewati batas waktu jatuh tempo.`,
-            delivery_method: 'push',
+            delivery_method: DeliveryMethod.PUSH,
             escalation_level: 1,
           });
         }
@@ -116,7 +118,7 @@ export class NotificationSchedulerService {
     }
   }
 
-  @Cron(CronExpression.EVERY_WEEK_ON_SUNDAY_AT_NOON) // Run every Sunday at 10:00 AM
+  @Cron('0 12 * * 0') // Run every Sunday at 12:00 PM (noon)
   async handleWeeklySummary() {
     console.log('Running weekly summary...');
     

@@ -26,6 +26,7 @@ export class UsersController {
       ktp_verified: false,
       selfie_verified: false,
       balance: 0,
+      reputation_score: createUserDto.reputation_score ?? 0,
     });
   }
 

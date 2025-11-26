@@ -3,15 +3,18 @@ import { SupabaseClient, createClient } from '@supabase/supabase-js';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 
+import { NotificationType } from './dto/create-notification.dto';
+import { DeliveryMethod } from '../agreements/dto/create-agreement.dto';
+
 export interface Notification {
   id: string;
   user_id: string;
   agreement_id?: string;
-  type: string;
+  type: NotificationType;
   title: string;
   message: string;
   read_status: boolean;
-  delivery_method: string;
+  delivery_method: DeliveryMethod;
   scheduled_time?: Date;
   sent_time?: Date;
   escalation_level: number;
@@ -167,10 +170,10 @@ export class NotificationsService {
     await this.create({
       user_id: '', // This will be populated when we know the borrower's ID
       agreement_id: agreementId,
-      type: 'reminder',
+      type: NotificationType.REMINDER,
       title: 'Pengingat Pembayaran Utang',
       message: 'Pembayaran utang Anda akan jatuh tempo dalam 3 hari. Harap siapkan dana Anda.',
-      delivery_method: 'push',
+      delivery_method: DeliveryMethod.PUSH,
       scheduled_time: threeDaysBefore.toISOString(),
       escalation_level: 0
     });
@@ -182,10 +185,10 @@ export class NotificationsService {
     await this.create({
       user_id: '', // This will be populated when we know the borrower's ID
       agreement_id: agreementId,
-      type: 'reminder',
+      type: NotificationType.REMINDER,
       title: 'Pengingat Pembayaran Utang',
       message: 'Pembayaran utang Anda akan jatuh tempo besok. Harap siapkan dana Anda.',
-      delivery_method: 'push',
+      delivery_method: DeliveryMethod.PUSH,
       scheduled_time: oneDayBefore.toISOString(),
       escalation_level: 0
     });
@@ -197,10 +200,10 @@ export class NotificationsService {
     await this.create({
       user_id: '', // This will be populated when we know the borrower's ID
       agreement_id: agreementId,
-      type: 'reminder',
+      type: NotificationType.REMINDER,
       title: 'Pembayaran Terlambat',
       message: 'Pembayaran utang Anda telah melewati batas waktu jatuh tempo.',
-      delivery_method: 'push',
+      delivery_method: DeliveryMethod.PUSH,
       scheduled_time: afterDueDate.toISOString(),
       escalation_level: 0
     });

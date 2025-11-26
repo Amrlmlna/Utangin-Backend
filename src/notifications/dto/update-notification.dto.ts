@@ -1,5 +1,6 @@
 import { IsUUID, IsString, IsEnum, IsBoolean, IsDateString, IsOptional, IsNumber } from 'class-validator';
-import { NotificationType, DeliveryMethod } from '../dto/create-notification.dto';
+import { NotificationType } from './create-notification.dto';
+import { DeliveryMethod } from '../../agreements/dto/create-agreement.dto';
 
 export class UpdateNotificationDto {
   @IsOptional()

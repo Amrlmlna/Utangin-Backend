@@ -37,7 +37,7 @@ export class AuthService {
     const { data: userProfile, error: profileError } = await this.supabase
       .from('users')
       .insert([{
-        id: data.user.id,
+        id: data.user!.id,
         email,
         name,
       }])
@@ -50,7 +50,7 @@ export class AuthService {
 
     return {
       user: userProfile,
-      token: data.session.access_token,
+      token: data.session!.access_token,
     };
   }
 
@@ -68,7 +68,7 @@ export class AuthService {
     const { data: userProfile, error: profileError } = await this.supabase
       .from('users')
       .select('*')
-      .eq('id', data.user.id)
+      .eq('id', data.user!.id)
       .single();
 
     if (profileError) {
@@ -77,7 +77,7 @@ export class AuthService {
 
     return {
       user: userProfile,
-      token: data.session.access_token,
+      token: data.session!.access_token,
     };
   }
 
@@ -92,7 +92,7 @@ export class AuthService {
     const { data: userProfile, error: profileError } = await this.supabase
       .from('users')
       .select('*')
-      .eq('id', data.user.id)
+      .eq('id', data.user!.id)
       .single();
 
     if (profileError) {
