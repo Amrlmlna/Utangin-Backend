@@ -18,13 +18,13 @@ export class AuthService {
     this.supabase = createClient(supabaseUrl, supabaseKey);
   }
 
-  async register(email: string, password: string, name: string): Promise<{ user?: User; token?: string; message?: string; requiresConfirmation: boolean }> {
+  async register(email: string, password: string, name?: string): Promise<{ user?: User; token?: string; message?: string; requiresConfirmation: boolean }> {
     const { data, error } = await this.supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          name,
+          name: name || null, // Store name if provided, otherwise null
         },
         emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/confirm`, // Optional: redirect after confirmation
       }
@@ -39,7 +39,7 @@ export class AuthService {
       // This means email confirmation is required
       // The user has been created but needs to confirm their email
 
-      // Create user profile in our users table only if the user was actually created
+      // Create user profile in our users table only with basic info (email)
       if (data.user) {
         try {
           await this.supabase
@@ -47,7 +47,8 @@ export class AuthService {
             .insert([{
               id: data.user.id,
               email,
-              name,
+              name: name || null, // Store name if provided, otherwise null
+              // Other fields like phone, ktp_number, address will be null initially
             }]);
           // We don't need to return the user data in this case since email confirmation is required
         } catch (profileError) {
@@ -62,13 +63,14 @@ export class AuthService {
       };
     } else {
       // Session is available from signUp (email confirmation not required or auto-confirmed)
-      // Create user profile in our users table
+      // Create user profile in our users table with basic info
       const { data: userProfile, error: profileError } = await this.supabase
         .from('users')
         .insert([{
           id: data.user!.id,
           email,
-          name,
+          name: name || null, // Store name if provided, otherwise null
+          // Other fields like phone, ktp_number, address will be null initially
         }])
         .select()
         .single();

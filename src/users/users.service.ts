@@ -114,4 +114,28 @@ export class UsersService {
 
     return data as User;
   }
+
+  async verifyUser(id: string, verificationData: Partial<User>): Promise<User> {
+    const { data, error } = await this.supabase
+      .from('users')
+      .update({
+        ...verificationData,
+        updated_at: new Date()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data as User;
+  }
+
+  async isVerified(id: string): Promise<boolean> {
+    const user = await this.findOne(id);
+    // A user is considered verified if they have name and at least some basic info
+    return !!user.name && user.name.length > 0;
+  }
 }

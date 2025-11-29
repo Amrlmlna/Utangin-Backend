@@ -7,11 +7,13 @@ import {
   Param,
   Delete,
   UseGuards,
-  NotFoundException
+  NotFoundException,
+  Req
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { VerifyUserDto } from './dto/verify-user.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from '../auth/interfaces/user.interface';
 
@@ -28,6 +30,21 @@ export class UsersController {
       balance: 0,
       reputation_score: createUserDto.reputation_score ?? 0,
     });
+  }
+
+  @Post('verify')
+  @UseGuards(AuthGuard('jwt'))
+  async verify(@Body() verifyUserDto: VerifyUserDto, @Req() req): Promise<User> {
+    const userId = req.user.id; // Get user ID from the JWT token
+    return this.usersService.verifyUser(userId, verifyUserDto);
+  }
+
+  @Get('verify')
+  @UseGuards(AuthGuard('jwt'))
+  async checkVerification(@Req() req): Promise<{ isVerified: boolean }> {
+    const userId = req.user.id; // Get user ID from the JWT token
+    const isVerified = await this.usersService.isVerified(userId);
+    return { isVerified };
   }
 
   @Get()

@@ -15,7 +15,8 @@ export class LoginDto {
   password: string;
 }
 
-export class RegisterDto extends CreateUserDto {
+class RegisterDto {
+  email: string;
   password: string;
 }
 
@@ -25,8 +26,8 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
-    const { email, password, name } = registerDto;
-    const result = await this.authService.register(email, password, name);
+    const { email, password } = registerDto;
+    const result = await this.authService.register(email, password);
 
     // If email confirmation is required, return a message instead of user data
     if (result.requiresConfirmation) {
